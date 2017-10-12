@@ -34,11 +34,9 @@ def Nasdaq_feed(Tiker):
     for i in range(1, n_rows):
         
             date = rows[i].findAll('td')[0].text[38:48]
-            print('Date is ' + date )
             dates.append(date)
             
             price = float(rows[i].findAll('td')[4].text[38:48])
-            print('Price is ' + str(price) )
             prices.append(price)
             
     Table = pd.DataFrame({'date' : dates , 'price' : prices})
