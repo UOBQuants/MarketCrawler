@@ -48,7 +48,6 @@ f.write('THE FOLLOWING ERRORS OCCURED DURING THE COMPLIE: \n')
 
 MarketData = pd.DataFrame({'N_index' : Dates.index }, index = Dates.values)
 Compund_Return = MarketData
-Normal_Retun = MarketData
 
 #########################################################   
 for ticker in companies['Symbol']:
@@ -79,7 +78,6 @@ Securities = MarketData.columns[1:]
 for i in Securities:
     security = MarketData[i].dropna() #Deleting Nan values
     C_return = security.drop(security.index[-1]) #Deleting the last row
-    N_return = C_return
     count = 1
     for j in C_return.index:
         today = security.loc[j]
@@ -89,14 +87,10 @@ for i in Securities:
         
         frac = (today/yesterday)
         
-        N_return.set_value(j, frac-1)
         C_return.set_value(j, np.log(frac))
     
     Compund_Return = pd.concat([Compund_Return, C_return], axis = 1, join_axes=[Compund_Return.index])
-    Normal_Retun = pd.concat([Normal_Retun, N_return], axis = 1, join_axes=[Normal_Retun.index])
-        
-    
+   
 Compund_Return.to_csv(path + 'Market_Data_CR.csv')
-Normal_Retun.to_csv(path + 'Market_Data_NR.csv')
 
 f.close()
