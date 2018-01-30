@@ -25,8 +25,8 @@ cwd_back = cwd[:cwd_end] #gets last directory's address
 companies = pd.read_csv(cwd_back + '/Market-Analysis/companylist.csv', index_col = 0)
 Directory = 'DB' #WARNING: THE FILES IN THAT DIRECTORY WILL BE DELETED AND REPLACED
 file = 'Market_Data.csv'
-start_date = '20/10/2016'
-end_date = '20/10/2017'
+start_date = (10, 7, 2015)
+end_date = None
 #########################################################
 
 path = cwd_back + '/Market-Analysis/' + Directory +'/' #gets destination directory
@@ -47,19 +47,26 @@ f.write('DATA WAS GATHERED FROM GOOGLE FINANCE\n')
 f.write('THE FOLLOWING ERRORS OCCURED DURING THE COMPLIE: \n')
 
 MarketData = pd.DataFrame({'N_index' : Dates.index }, index = Dates.values)
+MarketDataFull = MarketData
 Compund_Return = MarketData
-Normal_Retun = MarketData
 
 #########################################################   
 for ticker in companies['Symbol']:
     try:
         result = google_stocks(ticker, start_date, end_date) #Obtaining Security's price
+        
+        fullresult = result[['Date', 'Open', 'High', 'Low', 'Close']]
+        
         result = result[['Date','Close']]                   #droping other columns than date and close
         if result.shape[0] > 1 :                            #Checking if the surity has any values
             result.columns = ['index', ticker]
-            result = result.set_index('index')
-            MarketData = pd.concat([MarketData, result], axis = 1, join_axes=[MarketData.index])
+            fullresult.columns = ['index', ticker + ' Open', ticker + ' High', ticker + ' Low', ticker + ' Close']
             
+            result = result.set_index('index')
+            fullresult = fullresult.set_index('index')
+            
+            MarketData = pd.concat([MarketData, result], axis = 1, join_axes=[MarketData.index])
+            MarketDataFull = pd.concat([MarketDataFull, fullresult], axis = 1, join_axes=[MarketDataFull.index])
         else:
             ERROR = 'The ticker '+ ticker + ' was empty valued and therefore ignored'
             print (ERROR) 
@@ -70,7 +77,10 @@ for ticker in companies['Symbol']:
         f.write(ERROR + '\n')
 
 MarketData = MarketData.T.drop_duplicates().T #dropping duplicate columns
+MarketDataFull = MarketDataFull.T.drop_duplicates().T
+
 MarketData.to_csv(path + 'Market_Data.csv')
+MarketDataFull.to_csv(path + 'MarketDataFull.csv')
 #########################################################
 
 shape = MarketData.shape
@@ -79,7 +89,6 @@ Securities = MarketData.columns[1:]
 for i in Securities:
     security = MarketData[i].dropna() #Deleting Nan values
     C_return = security.drop(security.index[-1]) #Deleting the last row
-    N_return = C_return
     count = 1
     for j in C_return.index:
         today = security.loc[j]
@@ -89,14 +98,10 @@ for i in Securities:
         
         frac = (today/yesterday)
         
-        N_return.set_value(j, frac-1)
         C_return.set_value(j, np.log(frac))
     
     Compund_Return = pd.concat([Compund_Return, C_return], axis = 1, join_axes=[Compund_Return.index])
-    Normal_Retun = pd.concat([Normal_Retun, N_return], axis = 1, join_axes=[Normal_Retun.index])
-        
-    
+   
 Compund_Return.to_csv(path + 'Market_Data_CR.csv')
-Normal_Retun.to_csv(path + 'Market_Data_NR.csv')
 
 f.close()
